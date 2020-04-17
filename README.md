@@ -1,25 +1,20 @@
-# Übungen zur Vorlesung
+# Repository zur Vorlesung Advanced SQL
 
-Nähere Infos zur Organisation der Übungen findet ihr
+In diesem Repository veröffentlichen wir
 
-- im [Forum zur Veranstaltung](https://forum-db.informatik.uni-tuebingen.de/)
-    (allgemeine organisatorische Infos, Termine und inhaltliche Dikussionen zu VL und Übung),
+- **Slides** und ergänzende **Materialien** zu Vorlesung (Verzeichnis `lectures`)
 
-- im Handout zum Übungsbetrieb mit `git`
+- Die wöchentlichen **Übungsblätter** (Verzeichnis `assignments`)
+
+
+Nähere Infos zur Organisation der Veranstaltung findet ihr
+
+- im **[Handout zum Übungsbetrieb](https://raw.githubusercontent.com/DBatUTuebingen/asql-ss20/master/git-handout.pdf)** mit `git`
     (Aus- und Abgabe von Übungsblättern)
 
-- sowie auf der [Vorlesungswebsite](https://db.inf.uni-tuebingen.de/teaching.html)
+- im **[Forum zur Veranstaltung](https://forum-db.informatik.uni-tuebingen.de/c/ss20-asql)**
+    (allgemeine organisatorische Infos, Termine und inhaltliche Dikussionen zu VL und Übung),
+
+- sowie auf der **[Vorlesungswebsite](https://db.inf.uni-tuebingen.de/teaching/AdvancedSQLSS2020.html)**
     (allgemeine organisatorische Infos und Termine).
 
-# Angaben zum Team (bitte selbst ausfüllen)
-
-|   | Nachname | Vorname | Matrikelnummer | Studienfach | Studiengang (B.Sc., M.Sc, ...) | Forum Username | Studentische E-Mail       |
-|---|----------|---------|----------------|-------------|--------------------------------|----------------|---------------------------|
-| 1.|          |         |                |             |                                |                | @student.uni-tuebingen.de |
-| 2.|          |         |                |             |                                |                | @student.uni-tuebingen.de |
-  
-# Punktestand (wird von Tutoren angepasst)
-
-| Classroom Team | Prozent     | Gesamt | #1   |
-|----------------|-------------|--------|------|
-|                |             |        |      |
