@@ -1,4 +1,4 @@
--- Use case for SQL's common table expressions (WITH):
+-- Sample use case for SQL's common table expressions (WITH):
 --
 -- Infer bipedality (or quadropedality) for dinosaurs based
 -- on their body length and shape.
@@ -30,7 +30,7 @@ INSERT INTO dinosaurs(species, height, length, legs) VALUES
 -- ➊ Determine characteristic height/length (= body shape) ratio
 -- separately for bipedal and quadropedal dinosaurs:
 WITH bodies(legs, shape) AS (
-  SELECT d.legs, avg(d.height / d.length) AS shape
+  SELECT d.legs, AVG(d.height / d.length) AS shape
   FROM   dinosaurs AS d
   WHERE  d.legs IS NOT NULL
   GROUP BY d.legs
@@ -51,27 +51,29 @@ FROM   dinosaurs AS d
 WHERE  d.legs IS NOT NULL;
 
 
-
-
-
 -----------------------------------------------------------------------
 -- Equivalent formulation using DISTINCT ON (w/o LIMIT)
 
 WITH bodies(legs, shape) AS (
-  SELECT d.legs, avg(d.height / d.length) AS shape
+  SELECT d.legs, AVG(d.height / d.length) AS shape
   FROM   dinosaurs AS d
   WHERE  d.legs IS NOT NULL
   GROUP BY d.legs
 )
-
-SELECT d.*
-FROM (SELECT DISTINCT ON (d.species) d.species, d.height, d.length, b.legs  -- ⎫  ORDER BY may not be
-      FROM   dinosaurs AS d, bodies AS b                                    -- ⎬  top-level in a query
-      WHERE  d.legs IS NULL                                                 -- ⎪  used in UNION
-      ORDER BY d.species, abs(b.shape - d.height / d.length)) AS d          -- ⎭
-
-  UNION ALL
-
-SELECT d.*
-FROM   dinosaurs d
-WHERE  d.legs IS NOT NULL;
+--
+--  ──████████████──
+--  ─██░░░░░░░░░░██─
+--  ─██░░██████░░██─
+--  ──█████──██░░██─
+--  ──────████░░██──
+--  ──────██░░███───
+--  ──────█████─────
+--  ────────────────
+--  ───────████─────
+--  ──────██░░██────
+--  ───────████─────
+--
+-- Please post your alternative formulation of the dinosaur
+-- shape SQL query in the Advanced SQL forum.
+-- ⚠ Do not use LIMIT but rely on DISTINCT ON.
+-- Looking forward to your solutions!

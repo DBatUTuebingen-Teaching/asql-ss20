@@ -219,7 +219,7 @@ LIMIT 3;          -- fetch ≤ 3 rows (≡ FETCH NEXT 3 ROWS ONLY)
 -- Keep the d-smallest row for each of the two false/true groups
 SELECT DISTINCT ON (t.c) t.*
 FROM   T AS t
-ORDER BY t.c, t.d;
+ORDER BY t.c, t.d ASC;
 
 
 -- In absence of ORDER BY, we get *any* representative from the
@@ -245,7 +245,7 @@ SELECT COUNT(*)          AS "#rows",
        SUM(t.d)          AS "∑d",
        MAX(t.b)          AS "max(b)",
        bool_and(t.c)     AS "∀c",
-       bool_or(t.d = 30) AS "∃d=30"
+       bool_or(t.d = 42) AS "∃d=42"
 FROM   T AS t
 WHERE  true;
 
@@ -257,6 +257,7 @@ TABLE T;
 SELECT string_agg(t.a :: text, ',' ORDER BY t.d) AS "all a"
 FROM   T AS t;
 
+TABLE T;
 
 -- Filtered aggregate:
 
@@ -281,8 +282,8 @@ FROM   T As t;
 
 
 -- Unique aggregate
-SELECT COUNT(DISTINCT t.c),  -- there are only two distinct Booleans...
-       COUNT(t.c)
+SELECT COUNT(DISTINCT t.c) AS "#distinct non-NULL",  -- there are only two distinct Booleans...
+       COUNT(t.c)          AS "#non-NULL"
 FROM   T as t;
 
 
@@ -321,7 +322,6 @@ SELECT t.b AS "group",
        t.a % 2 AS "a odd?" -- constant in the 'x'/'y' groups, but PostgreSQL doesn't know...
 FROM   T AS t
 GROUP BY t.b, t.a % 2;
-
 --            └──┬──┘
 -- functionally dependent on t.b ⇒ will not affect grouping,
 -- list here explicitly as grouping criterion, so we may use
@@ -331,10 +331,17 @@ GROUP BY t.b, t.a % 2;
 -----------------------------------------------------------------------
 -- Bag/set operations
 
+-- For all bag/set operations, the lhs/rhs argument tables need to
+-- contribute compatible rows:
+-- • row widths must match
+-- • field types in corresponding columns must be cast-compatible
+-- • the row type of the lhs argument determines the result's
+--   field types and names
+
 SELECT t.*
 FROM   T AS t
 WHERE  t.c
-  UNION ALL       -- ≡ UNION (since both queries are disjoint: key t.a included)
+  UNION ALL   -- ≡ UNION (since both queries are disjoint: key t.a included)
 SELECT t.*
 FROM   T AS t
 WHERE  NOT t.c;
@@ -349,7 +356,7 @@ FROM   T AS t
 WHERE  NOT t.c;
 
 
--- Which subquery contributed what to the result?
+-- Which subquery q contributed what to the result?
 SELECT 1 AS q, t.b
 FROM   T AS t
 WHERE  t.c
@@ -402,7 +409,7 @@ INSERT INTO prehistoric VALUES
 SELECT p.class,
        p."herbivore?",
        p.legs,
-       string_agg(p.species, ', ') AS species  -- string_agg ignores NULL (may use coalesce(p.species, '?'))
+       string_agg(p.species, ', ') AS species  -- string_agg ignores NULL (may use COALESCE(p.species, '?'))
 FROM   prehistoric AS p
 GROUP BY GROUPING SETS ((class), ("herbivore?"), (legs));
 
@@ -438,7 +445,7 @@ GROUP BY p.legs;
 SELECT p.class,
        p."herbivore?",
        p.legs,
-       string_agg(p.species, ', ') AS species  -- string_agg ignores NULL (may use coalesce(p.species, '?'))
+       string_agg(p.species, ', ') AS species  -- string_agg ignores NULL (may use COALESCE(p.species, '?'))
 FROM   prehistoric AS p
 GROUP BY ROLLUP (class, "herbivore?", legs);
 
@@ -528,7 +535,7 @@ HAVING SUM(t.d) > 0
 
   UNION ALL
 
-SELECT DISTINCT ON ("∑d") 2 AS branch, NOT t.c AS "¬c", SUM(t.a) AS "∑d"
+SELECT DISTINCT ON ("∑d") 2 AS branch, NOT t.c AS "¬c", SUM(t.d) AS "∑d"
 FROM   T AS t
 WHERE  t.b = 'x'
 GROUP BY "¬c"
@@ -538,28 +545,28 @@ ORDER BY branch
 OFFSET 0
 LIMIT  7;
 
--- Numbers in ⚫ refer to the slides "SQL Evaluation vs. Reading Order"
+-- Numbers in ⚫ refer to the slide "SQL Evaluation vs. Reading Order"
 -- ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
 -- │                                           QUERY PLAN                                            │
 -- ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
--- │ Limit  (cost=49.76..49.77 rows=4 width=13) @(10) ➓                                             │
+-- │ Limit  (cost=49.76..49.77 rows=4 width=13) @(10) ➓                                              │
 -- │   Output: (1), ((NOT t.c)), (sum(t.d))                                                          │
--- │   ->  Sort  (cost=49.76..49.77 rows=4 width=13) ➒                                              │
+-- │   ->  Sort  (cost=49.76..49.77 rows=4 width=13) ➒                                               │
 -- │         Output: (1), ((NOT t.c)), (sum(t.d))                                                    │
 -- │         Sort Key: (1)                                                                           │
--- │         ->  Append  (cost=24.83..49.72 rows=4 width=13) ➑                                      │
--- │               ->  Unique  (cost=24.83..24.84 rows=2 width=5) ➐                                 │
+-- │         ->  Append  (cost=24.83..49.72 rows=4 width=13) ➑                                       │
+-- │               ->  Unique  (cost=24.83..24.84 rows=2 width=5) ➐                                  │
 -- │                     Output: (1), ((NOT t.c)), (sum(t.d))                                        │
 -- │                     ->  Sort  (cost=24.83..24.84 rows=2 width=5)                                │
 -- │                           Output: (1), ((NOT t.c)), (sum(t.d))                                  │
 -- │                           Sort Key: (sum(t.d))                                                  │
--- │                           ->  HashAggregate  (cost=24.80..24.82 rows=2 width=5) ➍              │
--- │                                 Output: 1, ((NOT t.c)), sum(t.d) ➏                             │
+-- │                           ->  HashAggregate  (cost=24.80..24.82 rows=2 width=5) ➍               │
+-- │                                 Output: 1, ((NOT t.c)), sum(t.d) ➏                              │
 -- │                                 Group Key: (NOT t.c)                                            │
--- │                                 Filter: (sum(t.d) > 0) ➎                                       │
--- │                                 ->  Seq Scan on public.t  (cost=0.00..24.75 rows=6 width=5) ➊  │
--- │                                       Output: (NOT t.c), t.d ➌                                 │
--- │                                       Filter: (t.b = 'x'::text) ➋                              │
+-- │                                 Filter: (sum(t.d) > 0) ➎                                        │
+-- │                                 ->  Seq Scan on public.t  (cost=0.00..24.75 rows=6 width=5) ➊   │
+-- │                                       Output: (NOT t.c), t.d ➌                                  │
+-- │                                       Filter: (t.b = 'x'::text) ➋                               │
 -- │               ->  Unique  (cost=24.83..24.84 rows=2 width=9)                                    │
 -- │                     Output: (2), ((NOT t_1.c)), (sum(t_1.a))                                    │
 -- │                     ->  Sort  (cost=24.83..24.84 rows=2 width=9)                                │
@@ -573,14 +580,3 @@ LIMIT  7;
 -- │                                       Output: (NOT t_1.c), t_1.a, t_1.d                         │
 -- │                                       Filter: (t_1.b = 'x'::text)                               │
 -- └─────────────────────────────────────────────────────────────────────────────────────────────────┘
-
--- SELECT t1.a, string_agg(t2.b,',')
--- FROM   T AS t1, T AS t2
--- WHERE  t1.a BETWEEN t2.a - 1 AND t2.a + 1
--- GROUP BY t1.a;
-
--- SELECT t1.a, array_agg(t2.b)
--- FROM   T AS t1, T AS t2
--- WHERE  t1.a BETWEEN t2.a - 1 AND t2.a + 1
--- GROUP BY t1.a;
-
