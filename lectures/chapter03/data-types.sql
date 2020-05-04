@@ -1,6 +1,6 @@
 -- Query the PostgreSQL system catalog for the supported data types:
 
-SELECT string_agg(t.typname, ' ') AS "𝖽ata types"
+SELECT t.typname
 FROM   pg_catalog.pg_type AS t
 WHERE  t.typelem  = 0      -- disregard array element types
   AND  t.typrelid = 0;     -- list non-composite types only
@@ -63,6 +63,7 @@ COPY T(a,b,c,d) FROM STDIN WITH (FORMAT CSV, NULL '▢');
 5,x,true,▢
 \.
 
+TABLE T;
 
 -----------------------------------------------------------------------
 -- Text data types
@@ -148,6 +149,12 @@ SELECT 'now'::date      AS "now (date)",
        'now'::timestamp AS "now (timestamp)";
 
 
+-- Timestamps may be optionally annotated with time zones
+SELECT 'now'::timestamp AS now,
+       'now'::timestamp with time zone AS "now tz";
+
+
+
 --            output  input interpretation
 --             ┌─┴──┐ ┌┴┐
 SET datestyle='German,MDY';
@@ -188,7 +195,7 @@ SELECT 'Aug 31, 2035'::date - 'now'::timestamp                     AS retirement
        'now'::date + '30 days'::interval                           AS in_one_month,
        'now'::date + 2 * '1 month'::interval                       AS in_two_months,
        'tomorrow'::date - 'now'::timestamp                         AS til_midnight,
-       extract(hours from ('tomorrow'::date - 'now'::timestamp))   AS hours_til_midnight,
+        extract(hours from ('tomorrow'::date - 'now'::timestamp))  AS hours_til_midnight,
        'tomorrow'::date - 'yesterday'::date                        AS two, -- ⚠ yields int
        make_interval(days => 'tomorrow'::date - 'yesterday'::date) AS two_days;
 \x off
@@ -198,10 +205,6 @@ SELECT 'Aug 31, 2035'::date - 'now'::timestamp                     AS retirement
 --                 ↓        ↓     ↓
 SELECT (make_date(2020, months.m, 1) - '1 day'::interval)::date AS last_day_of_month
 FROM   generate_series(1,12) AS months(m);
-
--- Timestamps may be optionally annotated with time zones
-SELECT 'now'::timestamp AS now,
-       'now'::timestamp with time zone AS "now tz";
 
 
 SELECT timezones.tz AS timezone,
@@ -243,12 +246,12 @@ CREATE TABLE starwars(film    episode PRIMARY KEY,
                       release date);
 
 INSERT INTO starwars(film,title,release) VALUES
-    ('TPM',  'The Phantom Menace',      'May 25, 1977'),
-    ('AOTC', 'Attack of the Clones',    'May 21, 1980'),
-    ('ROTS', 'Revenge of the Sith',     'May 25, 1983'),
-    ('ANH',  'A New Hope',              'May 19, 1999'),
-    ('ESB',  'The Empire Strikes Back', 'May 16, 2002'),
-    ('ROTJ', 'Return of the Jedi',      'May 19, 2005'),
+    ('TPM',  'The Phantom Menace',      'May 19, 1999'),
+    ('AOTC', 'Attack of the Clones',    'May 16, 2002'),
+    ('ROTS', 'Revenge of the Sith',     'May 19, 2005'),
+    ('ANH',  'A New Hope',              'May 25, 1977'),
+    ('ESB',  'The Empire Strikes Back', 'May 21, 1980'),
+    ('ROTJ', 'Return of the Jedi',      'May 25, 1983'),
     ('TFA',  'The Force Awakens',       'Dec 18, 2015'),
     ('TLJ',  'The Last Jedi',           'Dec 15, 2017'),
     ('TROS', 'The Rise of Skywalker',   'Dec 19, 2019');
@@ -263,7 +266,7 @@ INSERT INTO starwars(film,title,release) VALUES
 -- Order of enumerated type yields the Star Wars Machete order
 SELECT s.*
 FROM   starwars AS s
-ORDER BY s.film;      -- s.release yields chronological order
+ORDER BY s.film; -- s.release; -- yields chronological order
 
 
 -----------------------------------------------------------------------
