@@ -4,8 +4,7 @@
 
 -- Demonstrates:
 -- - LATERAL
--- - table functions (generate_series(), string_to_array(),
---   unnest(), regexp_split_to_table())
+-- - table functions (generate_series(), unnest(), regexp_split_to_table())
 -- - WITH ORDINALITY
 -- - WITH (CTEs)
 
@@ -34,10 +33,11 @@ WITH
 -- "Parse" ASCII seat map into table (row, col, taken?)
 seats(row, col, "taken?") AS (
   SELECT row.pos AS row, col.pos AS col, col.x = 'X' AS "taken?"
-  FROM   unnest(string_to_array(:'cinema', '\n')) WITH ORDINALITY AS row(xs, pos),
-         LATERAL unnest(string_to_array(row.xs, NULL)) WITH ORDINALITY AS col(x, pos)
-         --                                       ↑
-         --                         split between any two characters
+  FROM   unnest(string_to_array(:'cinema', '\n'))
+         WITH ORDINALITY AS row(xs, pos),
+         LATERAL unnest(string_to_array(row.xs, NULL))
+                 WITH ORDINALITY AS col(x, pos) -- ↑
+                                                -- split between any two characters
 ),
 -- Extent of cinema's seating area (rows × cols seats)
 extent(rows, cols) AS (
