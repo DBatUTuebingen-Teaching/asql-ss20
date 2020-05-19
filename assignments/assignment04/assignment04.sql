@@ -2,7 +2,7 @@
 
 SELECT p.a, p.b * 2, p.c, p.d, p.e, p.f
 FROM   (VALUES 
-  (1,'2'::money,4   ,42+1::real,1::real,NULL),
+  (1,'2'::money,4   ,41+1::real,1::real,NULL),
   (2,'5.72'    ,1.32,2         ,2      ,NULL),
   (3,'2'::money,5.77,3         ,3      ,NULL)
 ) AS p(a,b,c,d,e,f)
