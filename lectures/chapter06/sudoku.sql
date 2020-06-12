@@ -8,7 +8,7 @@
 --
 -- If (board, blank) ∊ sudoku, then board is a 9×9=81-integer array of a (partially solved)
 -- valid Sudoku board in which blank ∊ {0,2,...,80} is the offset of the first unknown digit
--- (represented by 0).  If blank is NULL, then s is a complete solution.
+-- (represented by 0).  If blank is NULL, then board is a complete solution.
 --
 -- (Note: array_position(xs, 0) yields NULL if 0 is not found in xs)
 
@@ -16,8 +16,8 @@
 
 DROP TABLE IF EXISTS puzzle;
 CREATE TEMPORARY TABLE puzzle (
-  row    serial PRIMARY KEY,
-  digits text   NOT NULL
+  row    int  GENERATED ALWAYS AS IDENTITY,
+  digits text NOT NULL
 );
 
 -- Sample Sudoku instances
@@ -46,14 +46,18 @@ CREATE TEMPORARY TABLE puzzle (
 .......3.
 \.
 
+TABLE puzzle;
+
 -----------------------------------------------------------------------
 
 WITH RECURSIVE
+-- encode Sudoku board as one-dimensional array in row-major order
 input(board) AS (
   SELECT array_agg(digits::int) AS board
   FROM   unnest((SELECT string_to_array(string_agg(replace(p.digits, '.', '0'), NULL ORDER BY p.row), NULL)
                  FROM   puzzle AS p)) AS digits
 ),
+-- solve Sudoko board by a recursive generate-and-test process
 sudoku(board, blank) AS (
   SELECT i.board AS board, array_position(i.board, 0)-1 AS blank
   FROM   input AS i
@@ -70,11 +74,12 @@ sudoku(board, blank) AS (
                          s.board[((s.blank/3) % 3) * 3 + (s.blank/27) * 27 + i + ((i-1)/3) * 6])  --  box of blank (offset i)
    )
 ),
+-- (recursive) post-processing only: generate formatted board output
 output(board, row, digits, rest) AS (
   SELECT ROW_NUMBER() OVER () AS board,
          0 AS row,
-         left(array_to_string(s.board, ''), 9) AS digits,
-         right(array_to_string(s.board, ''), cardinality(s.board) - 9) AS rest
+         left(array_to_string(s.board, ''),    9) AS digits,
+         right(array_to_string(s.board, ''), - 9) AS rest
   FROM   sudoku AS s
   WHERE  s.blank IS NULL
     UNION ALL
@@ -85,13 +90,15 @@ output(board, row, digits, rest) AS (
   FROM   output AS o
   WHERE  o.rest <> ''
 )
--- ➊ Complete progress towards solved board (⚠ huge)
+-- ➊ Raw input Sudoku board in array-encoding
+-- TABLE input;
+-- ➋ Complete progress towards solved board (⚠ huge)
 -- TABLE sudoku;
--- ➋ Raw solved Sudoku board
+-- ➌ Raw solved Sudoku board
 SELECT s.board
 FROM   sudoku AS s
 WHERE  s.blank IS NULL;
--- ➌ Formatted solved Sudoku board
+-- ➍ Formatted solved Sudoku board
 -- SELECT o.board AS number, o.digits AS solution
 -- FROM   output AS o
 -- ORDER BY o.board, o.row;
