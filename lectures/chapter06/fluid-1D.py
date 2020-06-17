@@ -10,6 +10,10 @@ import sys
 import csv
 import math
 import time
+from contextlib import contextmanager
+
+# frames per second
+FPS = 20
 
 # a column of height 8 is rendered with h/8×█ (base) and a residual character ∊ ▁▂▃▄▅▆▇ (top)
 def column(h):
@@ -38,10 +42,20 @@ iters  = len(ground)
 # ANSI terminal escape codes
 esc = chr(27)
 cls = esc + "[2J" + esc + "[0;0H"
+alt = esc + "[?1049h"
+org = esc + "[?1049l"
 # liquid/solid colors
 liquid = esc + "[34;1m"
 solid  = esc + "[0m"
 
+# switch to alternate terminal buffer while rendering
+@contextmanager
+def alternate():
+  try:
+    print(alt, end='')
+    yield
+  finally:
+    print(org, end='')
 
 # render the grids for all iterations
 # NB: each grids[‹iter›] is a list of column strings (flip that by 90° for screen rendering)
@@ -63,18 +77,18 @@ for iter, ws in enumerate(water):
       grids[iter][x] += top
     grids[iter][x] = grids[iter][x].ljust(height, ' ')
 
-
-# screen rendering
-for iter, grid in enumerate(grids):
-  print(cls + 'iteration #' + str(iter))
-  for y in range(height, 0, -1):
-    for x in range(0, width):
-      cell = grids[iter][x][y-1]
-      print((solid if stone(cell) else liquid) + cell, end='')
-    print('\n', end='')
-  print('\n')
-  if iter == 0:
-    input()
-  else:
-    time.sleep(0.05)
-
+with alternate():
+  # screen rendering
+  for iter, grid in enumerate(grids):
+    print(cls + 'iteration #' + str(iter))
+    for y in range(height, 0, -1):
+      for x in range(0, width):
+        cell = grids[iter][x][y-1]
+        print((solid if stone(cell) else liquid) + cell, end='')
+      print('\n', end='')
+    print('\n')
+    if iter == 0:
+      input()
+    else:
+      time.sleep(1 / FPS)
+  input()
