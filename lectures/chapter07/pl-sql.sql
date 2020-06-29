@@ -131,7 +131,7 @@ DEALLOCATE expression1;
 
 -- Return maximum "a" value in table "T" for the given "b" value (default: 0)
 DROP FUNCTION IF EXISTS max_a_for_b(T.b%TYPE);
-CREATE FUNCTION max_a_for_b(b T.b%TYPE) RETURNS int AS
+CREATE FUNCTION max_a_for_b(b T.b%TYPE) RETURNS T.a%TYPE AS
 $$
 DECLARE max_a T.a%TYPE;
 BEGIN
@@ -142,7 +142,7 @@ BEGIN
   ORDER BY t.a DESC
   LIMIT 1;                    -- we may omit this (INTO picks the first row if we find many)
   -- return default value 0 in case no row was returned
-  IF max_a IS NULL THEN       -- equivalently: IF NOT FOUND THEN
+  IF NOT FOUND THEN
     max_a = 0;
   END IF;
   --
@@ -151,7 +151,9 @@ END;
 $$
 LANGUAGE PLPGSQL;
 
-SELECT max_a_for_b('x') AS x, max_a_for_b('y') AS y , max_a_for_b('?') AS "?";
+SELECT max_a_for_b('x') AS x,
+       max_a_for_b('y') AS y,
+       max_a_for_b('?') AS "?";
 
 
 -----------------------------------------------------------------------
